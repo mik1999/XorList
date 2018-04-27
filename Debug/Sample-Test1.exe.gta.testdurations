@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GtaTestDurations xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Executable>C:\МФТИ\programs\Semester2\C++\XorList\Debug\Sample-Test1.exe</Executable>
+  <TestDurations>
+    <TestDuration Test="TestStackAllocator.SimpleTest" Duration="1" />
+    <TestDuration Test="TestStackAllocator.CopyIntTest" Duration="14" />
+    <TestDuration Test="TestStackAllocator.CopyDiffTest" Duration="2" />
+    <TestDuration Test="TestXorList.SimpleTest" Duration="0" />
+  </TestDurations>
+</GtaTestDurations>

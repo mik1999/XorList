@@ -1,0 +1,6 @@
+﻿  test.cpp
+c:\мфти\programs\semester2\c++\xorlist\sample-test1\test.cpp(279): warning C4715: generationFlagBourders: значение возвращается не при всех путях выполнения
+c:\мфти\programs\semester2\c++\xorlist\sample-test1\test.cpp(224): warning C4715: generate_random_insertion_operation<int,&rand>: значение возвращается не при всех путях выполнения
+c:\мфти\programs\semester2\c++\xorlist\sample-test1\test.cpp(236): warning C4715: generate_random_erase_operation<int>: значение возвращается не при всех путях выполнения
+c:\мфти\programs\semester2\c++\xorlist\sample-test1\test.cpp(258): warning C4715: generate_random_access_operation<int>: значение возвращается не при всех путях выполнения
+  Sample-Test1.vcxproj -> C:\МФТИ\programs\Semester2\C++\XorList\Debug\Sample-Test1.exe
