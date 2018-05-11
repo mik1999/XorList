@@ -116,6 +116,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="BasicStackAllocator.h" />
+    <ClInclude Include="ListOperation.h" />
     <ClInclude Include="StackAllocator.h" />
     <ClInclude Include="XorList.h" />
   </ItemGroup>

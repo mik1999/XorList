@@ -76,39 +76,29 @@ private:
 
 	struct _Node {
 	public:
-		_Node() = delete;
-		explicit _Node(const _Node &) = delete;
-		explicit _Node(const T & value);
-		explicit _Node(T && value);
-		~_Node();
-
-		void update(_pNode previous, _pNode next);
 		T _key;
-	private:
-		friend class XorList;
 		IntPtr _prevXorNext;
 	};
-
+	static void update(_pNode node, _pNode previous, _pNode next);
 	static _pNode next(_pNode first, _pNode second = nullptr);
 	static _pNode previous(_pNode first, _pNode second = nullptr);
 
 	template <typename T1>
 	void insert_between(_pNode first, _pNode second, T1&& value);
 
-	template <typename T1>
-	_pNode create(T1&&);
+	_pNode create(T&&);
+	_pNode create(const T&);
 	void free(_pNode);
 
 	using _XorListAllocator = typename Allocator::template rebind<_Node>::other;
 	_XorListAllocator _xorListAlloc;
-	Allocator _alloc;
 
 	_pNode _begin, _end;
 	size_t _size;
 };
 
 template<class T, class Allocator>
-XorList<T, Allocator>::XorList(const Allocator& alloc) : _size(0), _xorListAlloc(alloc), _alloc(alloc)
+XorList<T, Allocator>::XorList(const Allocator& alloc) : _size(0), _xorListAlloc(alloc)
 {
 	_begin = _end = nullptr;
 }
@@ -116,7 +106,6 @@ XorList<T, Allocator>::XorList(const Allocator& alloc) : _size(0), _xorListAlloc
 template<class T, class Allocator>
 XorList<T, Allocator>::XorList(const XorList<T, Allocator> & other) : _size(0)
 {
-	_alloc = std::allocator_traits<Allocator>::select_on_container_copy_construction(other._alloc);
 	_xorListAlloc = std::allocator_traits<_XorListAllocator>::select_on_container_copy_construction(other._xorListAlloc);
 	_begin = _end = nullptr;
 	copy_elements(other);
@@ -126,7 +115,6 @@ template<class T, class Allocator>
 XorList<T, Allocator>::XorList(XorList<T, Allocator> && other) :
 	_size(other._size), _begin(other._begin), _end(other._end)
 {
-	_alloc = std::move<Allocator>(other._alloc);
 	_xorListAlloc = std::move<_XorListAllocator>(other._xorListAlloc);
 	other._begin = other._end = nullptr;
 	other._size = 0;
@@ -141,7 +129,6 @@ XorList<T, Allocator>::~XorList()
 template<class T, class Allocator>
 XorList<T, Allocator> & XorList<T, Allocator>::operator=(const XorList<T, Allocator> & other)
 {
-	_alloc = std::allocator_traits<Allocator>::select_on_container_copy_construction(other._alloc);
 	_xorListAlloc = std::allocator_traits<_XorListAllocator>::select_on_container_copy_construction(other._xorListAlloc);
 	_size = 0;
 	copy_elements(other);
@@ -151,7 +138,6 @@ XorList<T, Allocator> & XorList<T, Allocator>::operator=(const XorList<T, Alloca
 template<class T, class Allocator>
 XorList<T, Allocator> & XorList<T, Allocator>::operator=(XorList<T, Allocator> && other)
 {
-	_alloc = std::move<Allocator>(other._alloc);
 	_xorListAlloc = std::move<_XorListAllocator>(other._xorListAlloc);
 	_begin = other._begin;
 	_end = other._end;
@@ -162,8 +148,9 @@ XorList<T, Allocator> & XorList<T, Allocator>::operator=(XorList<T, Allocator> &
 }
 
 template<class T, class Allocator>
-XorList<T, Allocator>::XorList(size_t count, const T & value, const Allocator & alloc) : _alloc(alloc)
+XorList<T, Allocator>::XorList(size_t count, const T & value, const Allocator & alloc):_xorListAlloc(alloc)
 {
+	_begin = _end = nullptr;
 	for (size_t i = 0; i < count; i++)
 		push_back(value);
 }
@@ -266,11 +253,11 @@ void XorList<T, Allocator>::erase(iterator it)
 	_size--;
 	_pNode lNode = it._prevNode, delNode = it._node, rNode = next(lNode, delNode);
 	if (lNode != nullptr)
-		lNode->update(previous(lNode, delNode), rNode);
+		update(lNode, previous(lNode, delNode), rNode);
 	else
 		_begin = rNode;
 	if (rNode != nullptr)
-		rNode->update(lNode, next(delNode, rNode));
+		update(rNode, lNode, next(delNode, rNode));
 	else
 		_end = lNode;
 	free(delNode);
@@ -321,21 +308,30 @@ void XorList<T, Allocator>::insert_between(_pNode first, _pNode second, T1 && va
 	_pNode newNode = create(std::forward<T1>(value));
 	_size++;
 	if (first != nullptr)
-		first->update(previous(first, second), newNode);
+		update(first, previous(first, second), newNode);
 	else
 		_begin = newNode;
 	if (second != nullptr)
-		second->update(newNode, next(first, second));
+		update(second, newNode, next(first, second));
 	else
 		_end = newNode;
-	newNode->update(first, second);
+	update(newNode, first, second);
 }
 
 template<class T, class Allocator>
-template <typename T1>
-typename XorList<T, Allocator>::_pNode XorList<T, Allocator>::create(T1 && value)
+typename XorList<T, Allocator>::_pNode XorList<T, Allocator>::create(T && value)
 {
-	return new(_xorListAlloc.allocate(1)) _Node(std::forward<T1>(value));
+	auto ptr = new(_xorListAlloc.allocate(1)) _Node;
+	ptr->_key = std::move(std::forward<T>(value));
+	return ptr;
+}
+
+template<class T, class Allocator>
+typename XorList<T, Allocator>::_pNode XorList<T, Allocator>::create(const T & value)
+{
+	auto ptr = new(_xorListAlloc.allocate(1)) _Node;
+	ptr->_key = value;
+	return ptr;
 }
 
 template<class T, class Allocator>
@@ -407,26 +403,7 @@ inline bool XorList<T, Allocator>::iterator::operator!=(const iterator & other) 
 }
 
 template<class T, class Allocator>
-XorList<T, Allocator>::_Node::_Node(const T & value) : _key(value)
+void XorList<T, Allocator>::update(_pNode node, _pNode previous, _pNode next)
 {
-	//initialize values
-}
-
-template<class T, class Allocator>
-XorList<T, Allocator>::_Node::_Node(T && value)
-{
-	_key = std::move<T>(std::forward<T>(value));
-	//initialize values
-}
-
-template<class T, class Allocator>
-XorList<T, Allocator>::_Node::~_Node()
-{
-	// do nothing
-}
-
-template<class T, class Allocator>
-typename void XorList<T, Allocator>::_Node::update(_pNode previous, _pNode next)
-{
-	_prevXorNext = IntPtr(previous) ^ IntPtr(next);
+	node->_prevXorNext = IntPtr(previous) ^ IntPtr(next);
 }
